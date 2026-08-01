@@ -11,7 +11,7 @@ An Obsidian plugin that converts PNG, JPEG, and WebP images in your vault to Web
 
 For PNG and JPEG sources, the plugin changes the extension to `.webp`, updates the link in the current note, and replaces the image data. Existing WebP files are overwritten in place. Conversion is cancelled if the target path already exists. If Obsidian's metadata cache reports that other notes also reference the image, the conversion dialog warns you; those other notes are intentionally left unchanged.
 
-## Installation from source
+## Build from source
 
 ```sh
 pnpm install
