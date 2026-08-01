@@ -24,4 +24,4 @@ Install this plugin using [BRAT](https://github.com/TfTHacker/obsidian42-brat).
 
 ## Related plugins
 
-- [obsidian-image-converter](https://github.com/xryul/obsidian-image-converter): This plugin was inspired by obsidian-image-converter and developed as a simpler alternative to it.
+- This plugin was inspired by [obsidian-image-converter](https://github.com/xryul/obsidian-image-converter) and developed as a simpler alternative to it.
