@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": { "@/*": ["src/*"] },
+    "types": ["node"],
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "module": "ESNext",
+    "target": "ES2022",
+    "allowJs": false,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "isolatedModules": true,
+    "moduleResolution": "Bundler",
+    "importHelpers": true,
+    "downlevelIteration": true,
+    "useUnknownInCatchVariables": true,
+    "lib": ["DOM", "ES2022"]
+  },
+  "include": ["src/**/*.ts", "esbuild.config.mjs"]
+}

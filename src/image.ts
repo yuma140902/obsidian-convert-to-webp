@@ -1,0 +1,88 @@
+export type ResizeMode = "none" | "long-edge" | "short-edge" | "width" | "height";
+
+export interface ConvertOptions {
+  resizeMode: ResizeMode;
+  size: number;
+  lossless: boolean;
+  quality: number;
+}
+
+export interface Dimensions { width: number; height: number }
+
+let encoderReady: Promise<void> | undefined;
+
+async function initializeEncoder(): Promise<void> {
+  if (!encoderReady) {
+    encoderReady = (async () => {
+      const [{ init }, { simd }, plainWasm, simdWasm] = await Promise.all([
+        import("@jsquash/webp/encode.js"),
+        import("wasm-feature-detect"),
+        import("@jsquash/webp/codec/enc/webp_enc.wasm"),
+        import("@jsquash/webp/codec/enc/webp_enc_simd.wasm")
+      ]);
+      const wasmBytes = (await simd()) ? simdWasm.default : plainWasm.default;
+      await init(await WebAssembly.compile(Uint8Array.from(wasmBytes).buffer));
+    })().catch((error: unknown) => {
+      encoderReady = undefined;
+      throw error;
+    });
+  }
+  await encoderReady;
+}
+
+export function calculateDimensions(
+  source: Dimensions,
+  mode: ResizeMode,
+  requestedSize: number
+): Dimensions {
+  if (mode === "none" || !Number.isFinite(requestedSize) || requestedSize <= 0) return source;
+
+  let scale: number;
+  if (mode === "width") scale = requestedSize / source.width;
+  else if (mode === "height") scale = requestedSize / source.height;
+  else if (mode === "long-edge") scale = requestedSize / Math.max(source.width, source.height);
+  else scale = requestedSize / Math.min(source.width, source.height);
+
+  // This plug-in only shrinks images; it never upscales them.
+  scale = Math.min(1, scale);
+  return {
+    width: Math.max(1, Math.round(source.width * scale)),
+    height: Math.max(1, Math.round(source.height * scale))
+  };
+}
+
+export function replaceImageExtension(path: string): string {
+  return path.replace(/\.(?:png|jpe?g|webp)$/i, ".webp");
+}
+
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 ** 2) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
+}
+
+export async function decodeImage(data: ArrayBuffer, mimeType: string): Promise<ImageBitmap> {
+  return createImageBitmap(new Blob([data], { type: mimeType }));
+}
+
+export async function encodeWebp(
+  image: ImageBitmap,
+  dimensions: Dimensions,
+  options: Pick<ConvertOptions, "lossless" | "quality">
+): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  canvas.width = dimensions.width;
+  canvas.height = dimensions.height;
+  const context = canvas.getContext("2d", { alpha: true });
+  if (!context) throw new Error("Canvas 2D is not available.");
+  context.drawImage(image, 0, 0, dimensions.width, dimensions.height);
+
+  const imageData = context.getImageData(0, 0, dimensions.width, dimensions.height);
+  await initializeEncoder();
+  const { default: encode } = await import("@jsquash/webp/encode.js");
+  const encoded = await encode(imageData, {
+    lossless: options.lossless ? 1 : 0,
+    quality: Math.max(0, Math.min(100, options.quality))
+  });
+  return new Blob([encoded], { type: "image/webp" });
+}

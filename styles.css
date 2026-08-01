@@ -1,0 +1,32 @@
+.convert-to-webp-modal {
+  width: min(680px, 90vw);
+}
+
+.convert-to-webp-preview {
+  align-items: center;
+  background: var(--background-secondary);
+  border-radius: var(--radius-m);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+  justify-content: center;
+  margin-bottom: var(--size-4-4);
+  min-height: 220px;
+  overflow: hidden;
+  padding: var(--size-4-3);
+}
+
+.convert-to-webp-preview img {
+  max-height: 50vh;
+  max-width: 100%;
+  object-fit: contain;
+}
+
+.convert-to-webp-preview img:not([src]) {
+  display: none;
+}
+
+.convert-to-webp-preview-info {
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
