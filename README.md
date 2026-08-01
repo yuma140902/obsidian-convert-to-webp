@@ -18,8 +18,6 @@ pnpm install
 pnpm build
 ```
 
-Copy `manifest.json`, `main.js`, and `styles.css` into `<vault>/.obsidian/plugins/convert-to-webp/`, then enable the plugin in Obsidian.
+## Installation with BRAT
 
-## Debugging
-
-Open **Developer tools** from Obsidian's command palette, select the **Console** tab, and filter for `[Convert to WebP]`. The plugin logs each step from loading and button clicks through encoding, renaming, and writing the converted file. Errors include their stack trace.
+Install this plugin using [BRAT](https://github.com/TfTHacker/obsidian42-brat).
