@@ -1,12 +1,16 @@
 import { Menu, Notice, Plugin, TAbstractFile, TFile, type Editor } from "obsidian";
-import { replaceImageExtension } from "./image";
+import { replaceImageExtension, type ConvertOptions } from "./image";
 import { rewriteImageLinks } from "./links";
 import { ConvertModal } from "./modal";
+import { DEFAULT_CONVERT_OPTIONS, loadConvertOptions } from "./settings";
 
 const SUPPORTED_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp"]);
 
 export default class ConvertToWebpPlugin extends Plugin {
-  override onload(): void {
+  private options: ConvertOptions = { ...DEFAULT_CONVERT_OPTIONS };
+
+  override async onload(): Promise<void> {
+    this.options = loadConvertOptions(await this.loadData());
     this.registerEvent(this.app.workspace.on("file-menu", (menu, file) => this.addFileMenuItem(menu, file)));
     this.registerEvent(this.app.workspace.on("editor-menu", (menu, editor, view) => {
       const file = this.imageAtCursor(editor, view);
@@ -22,7 +26,23 @@ export default class ConvertToWebpPlugin extends Plugin {
     menu.addItem((item) => item
       .setTitle("Convert to WebP")
       .setIcon("image")
-      .onClick(() => new ConvertModal(this.app, file, (blob) => this.convert(file, blob)).open()));
+      .onClick(() => new ConvertModal(
+        this.app,
+        file,
+        this.options,
+        (blob, options) => this.convertAndRemember(file, blob, options)
+      ).open()));
+  }
+
+  private async convertAndRemember(source: TFile, blob: Blob, options: ConvertOptions): Promise<void> {
+    await this.convert(source, blob);
+    this.options = { ...options };
+    try {
+      await this.saveData(this.options);
+    } catch (error) {
+      console.error("Convert to WebP: failed to save the last-used settings", error);
+      new Notice("Converted successfully, but the settings could not be saved.");
+    }
   }
 
   private imageAtCursor(editor: Editor, view: { file: TFile | null }): TFile | null {

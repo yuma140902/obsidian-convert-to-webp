@@ -17,7 +17,7 @@ const MIME_TYPES: Record<string, string> = {
 };
 
 export class ConvertModal extends Modal {
-  private options: ConvertOptions = { resizeMode: "none", size: 1200, lossless: false, quality: 80 };
+  private readonly options: ConvertOptions;
   private original?: ImageBitmap;
   private dimensions?: Dimensions;
   private previewBlob?: Blob;
@@ -28,8 +28,14 @@ export class ConvertModal extends Modal {
   private convertButton?: HTMLButtonElement;
   private generation = 0;
 
-  constructor(app: App, private readonly file: TFile, private readonly onConvert: (blob: Blob) => Promise<void>) {
+  constructor(
+    app: App,
+    private readonly file: TFile,
+    initialOptions: ConvertOptions,
+    private readonly onConvert: (blob: Blob, options: ConvertOptions) => Promise<void>
+  ) {
     super(app);
+    this.options = { ...initialOptions };
   }
 
   override onOpen(): void {
@@ -55,7 +61,7 @@ export class ConvertModal extends Modal {
 
     new Setting(this.contentEl).setName("Size").setDesc("Pixels; images are never enlarged").addText((text) => {
       this.sizeInput = text.inputEl;
-      text.setValue(String(this.options.size)).setDisabled(true).onChange((value) => {
+      text.setValue(String(this.options.size)).setDisabled(this.options.resizeMode === "none").onChange((value) => {
         this.options.size = Number(value);
         void this.refreshPreview();
       });
@@ -66,7 +72,7 @@ export class ConvertModal extends Modal {
 
     new Setting(this.contentEl).setName("Encoding").addDropdown((dropdown) => dropdown
       .addOptions({ lossy: "Lossy", lossless: "Lossless" })
-      .setValue("lossy")
+      .setValue(this.options.lossless ? "lossless" : "lossy")
       .onChange((value) => {
         this.options.lossless = value === "lossless";
         void this.refreshPreview();
@@ -127,7 +133,7 @@ export class ConvertModal extends Modal {
     if (!this.previewBlob) return;
     this.convertButton?.setAttribute("disabled", "true");
     try {
-      await this.onConvert(this.previewBlob);
+      await this.onConvert(this.previewBlob, { ...this.options });
       this.close();
     } catch (error) {
       this.showError(error);
