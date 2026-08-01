@@ -21,7 +21,17 @@ async function initializeEncoder(): Promise<void> {
         import("@jsquash/webp/codec/enc/webp_enc_simd.wasm")
       ]);
       const wasmBytes = (await simd()) ? simdWasm.default : plainWasm.default;
-      await init(await WebAssembly.compile(Uint8Array.from(wasmBytes).buffer));
+      const initializeWithModule = init as unknown as (
+        module: WebAssembly.Module,
+        overrides: { locateFile: (path: string) => string }
+      ) => Promise<unknown>;
+      await initializeWithModule(
+        await WebAssembly.compile(Uint8Array.from(wasmBytes).buffer),
+        // The Wasm module is instantiated from the bundled bytes above. Supplying
+        // locateFile prevents Emscripten from evaluating `new URL(...,
+        // import.meta.url)`, which is invalid in Obsidian's CommonJS plug-in bundle.
+        { locateFile: (path: string) => path }
+      );
     })().catch((error: unknown) => {
       encoderReady = undefined;
       throw error;
