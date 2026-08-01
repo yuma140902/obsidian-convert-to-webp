@@ -4,7 +4,7 @@ import {
   calculateDimensions,
   decodeImage,
   encodeWebp,
-  formatBytes,
+  formatPreviewInfo,
   type ConvertOptions,
   type Dimensions,
   type ResizeMode
@@ -20,6 +20,7 @@ const MIME_TYPES: Record<string, string> = {
 export class ConvertModal extends Modal {
   private readonly options: ConvertOptions;
   private original?: ImageBitmap;
+  private originalBytes?: number;
   private dimensions?: Dimensions;
   private previewBlob?: Blob;
   private previewUrl?: string;
@@ -123,6 +124,7 @@ export class ConvertModal extends Modal {
     debugLog("Loading source image", { path: this.file.path });
     try {
       const data = await this.app.vault.readBinary(this.file);
+      this.originalBytes = data.byteLength;
       debugLog("Source image read", { path: this.file.path, byteLength: data.byteLength });
       this.original = await decodeImage(data, MIME_TYPES[this.file.extension.toLowerCase()] ?? "application/octet-stream");
       debugLog("Source image decoded", { width: this.original.width, height: this.original.height });
@@ -134,7 +136,7 @@ export class ConvertModal extends Modal {
   }
 
   private async refreshPreview(): Promise<void> {
-    if (!this.original || !this.previewInfo) return;
+    if (!this.original || this.originalBytes === undefined || !this.previewInfo) return;
     const generation = ++this.generation;
     debugLog("Preview encoding started", { generation, options: this.options });
     this.convertButton?.setDisabled(true);
@@ -154,7 +156,12 @@ export class ConvertModal extends Modal {
       if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
       this.previewUrl = URL.createObjectURL(blob);
       if (this.previewImage) this.previewImage.src = this.previewUrl;
-      this.previewInfo.setText(`${this.dimensions.width} × ${this.dimensions.height}px · ${formatBytes(blob.size)}`);
+      this.previewInfo.setText(formatPreviewInfo(
+        { width: this.original.width, height: this.original.height },
+        this.originalBytes,
+        this.dimensions,
+        blob.size
+      ));
       this.convertButton?.setDisabled(false);
       debugLog("Preview ready; Convert button enabled", {
         generation,

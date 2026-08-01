@@ -77,6 +77,15 @@ export function formatBytes(bytes: number): string {
   return `${(bytes / 1024 ** 2).toFixed(1)} MB`;
 }
 
+export function formatPreviewInfo(
+  originalDimensions: Dimensions,
+  originalBytes: number,
+  convertedDimensions: Dimensions,
+  convertedBytes: number
+): string {
+  return `Original: ${originalDimensions.width} × ${originalDimensions.height}px · ${formatBytes(originalBytes)} → WebP: ${convertedDimensions.width} × ${convertedDimensions.height}px · ${formatBytes(convertedBytes)}`;
+}
+
 export async function decodeImage(data: ArrayBuffer, mimeType: string): Promise<ImageBitmap> {
   return createImageBitmap(new Blob([data], { type: mimeType }));
 }

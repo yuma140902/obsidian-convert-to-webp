@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { calculateDimensions, formatBytes, replaceImageExtension } from "./image";
+import { calculateDimensions, formatBytes, formatPreviewInfo, replaceImageExtension } from "./image";
 
 describe("calculateDimensions", () => {
   it("keeps the original size", () => expect(calculateDimensions({ width: 1200, height: 800 }, "none", 10)).toEqual({ width: 1200, height: 800 }));
@@ -20,4 +20,13 @@ it("replaces supported extensions", () => {
 it("formats byte sizes", () => {
   expect(formatBytes(512)).toBe("512 B");
   expect(formatBytes(1536)).toBe("1.5 KB");
+});
+
+it("formats preview information with original and converted sizes", () => {
+  expect(formatPreviewInfo(
+    { width: 2400, height: 1600 },
+    1536,
+    { width: 1200, height: 800 },
+    512
+  )).toBe("Original: 2400 × 1600px · 1.5 KB → WebP: 1200 × 800px · 512 B");
 });
