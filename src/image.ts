@@ -9,10 +9,13 @@ export interface ConvertOptions {
 
 export interface Dimensions { width: number; height: number }
 
+import { debugError, debugLog } from "./debug";
+
 let encoderReady: Promise<void> | undefined;
 
 async function initializeEncoder(): Promise<void> {
   if (!encoderReady) {
+    debugLog("Initializing WebP encoder");
     encoderReady = (async () => {
       const [{ init }, { simd }, plainWasm, simdWasm] = await Promise.all([
         import("@jsquash/webp/encode.js"),
@@ -21,6 +24,7 @@ async function initializeEncoder(): Promise<void> {
         import("@jsquash/webp/codec/enc/webp_enc_simd.wasm")
       ]);
       const wasmBytes = (await simd()) ? simdWasm.default : plainWasm.default;
+      debugLog("WebP Wasm selected", { byteLength: wasmBytes.byteLength });
       const initializeWithModule = init as unknown as (
         module: WebAssembly.Module,
         overrides: { locateFile: (path: string) => string }
@@ -32,8 +36,10 @@ async function initializeEncoder(): Promise<void> {
         // import.meta.url)`, which is invalid in Obsidian's CommonJS plug-in bundle.
         { locateFile: (path: string) => path }
       );
+      debugLog("WebP encoder initialized");
     })().catch((error: unknown) => {
       encoderReady = undefined;
+      debugError("WebP encoder initialization failed", error);
       throw error;
     });
   }
@@ -80,6 +86,7 @@ export async function encodeWebp(
   dimensions: Dimensions,
   options: Pick<ConvertOptions, "lossless" | "quality">
 ): Promise<Blob> {
+  debugLog("encodeWebp entered", { dimensions, options });
   const canvas = document.createElement("canvas");
   canvas.width = dimensions.width;
   canvas.height = dimensions.height;
@@ -94,5 +101,7 @@ export async function encodeWebp(
     lossless: options.lossless ? 1 : 0,
     quality: Math.max(0, Math.min(100, options.quality))
   });
-  return new Blob([encoded], { type: "image/webp" });
+  const blob = new Blob([encoded], { type: "image/webp" });
+  debugLog("encodeWebp completed", { blobSize: blob.size });
+  return blob;
 }

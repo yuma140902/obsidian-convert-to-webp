@@ -16,6 +16,15 @@
   padding: var(--size-4-3);
 }
 
+.convert-to-webp-warning {
+  background: rgba(var(--color-orange-rgb), 0.15);
+  border-left: 3px solid var(--color-orange);
+  border-radius: var(--radius-s);
+  color: var(--text-normal);
+  margin-bottom: var(--size-4-3);
+  padding: var(--size-4-3);
+}
+
 .convert-to-webp-preview img {
   max-height: 50vh;
   max-width: 100%;

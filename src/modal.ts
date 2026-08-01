@@ -1,4 +1,5 @@
-import { App, Modal, Notice, Setting, TFile } from "obsidian";
+import { App, ButtonComponent, Modal, Notice, Setting, TFile, TextComponent } from "obsidian";
+import { debugError, debugLog } from "./debug";
 import {
   calculateDimensions,
   decodeImage,
@@ -24,14 +25,17 @@ export class ConvertModal extends Modal {
   private previewUrl?: string;
   private previewImage?: HTMLImageElement;
   private previewInfo?: HTMLElement;
-  private sizeInput?: HTMLInputElement;
-  private convertButton?: HTMLButtonElement;
+  private sizeInput?: TextComponent;
+  private convertButton?: ButtonComponent;
   private generation = 0;
+  private submitting = false;
 
   constructor(
     app: App,
     private readonly file: TFile,
     initialOptions: ConvertOptions,
+    private readonly currentNote: TFile | null,
+    private readonly otherReferringNotes: TFile[],
     private readonly onConvert: (blob: Blob, options: ConvertOptions) => Promise<void>
   ) {
     super(app);
@@ -39,6 +43,7 @@ export class ConvertModal extends Modal {
   }
 
   override onOpen(): void {
+    debugLog("Modal opened", { path: this.file.path, initialOptions: this.options });
     this.modalEl.addClass("convert-to-webp-modal");
     this.titleEl.setText(`Convert ${this.file.name} to WebP`);
     this.render();
@@ -46,6 +51,19 @@ export class ConvertModal extends Modal {
   }
 
   private render(): void {
+    if (this.otherReferringNotes.length > 0) {
+      const names = this.otherReferringNotes.slice(0, 3).map((note) => note.path).join(", ");
+      const remaining = this.otherReferringNotes.length - 3;
+      this.contentEl.createDiv({
+        cls: "convert-to-webp-warning",
+        text: `Warning: ${this.otherReferringNotes.length} other note(s) reference this image. Their links will not be changed: ${names}${remaining > 0 ? `, and ${remaining} more` : ""}`
+      });
+    } else if (!this.currentNote) {
+      this.contentEl.createDiv({
+        cls: "convert-to-webp-warning",
+        text: "Warning: No current Markdown note was found, so no image link will be changed."
+      });
+    }
     const preview = this.contentEl.createDiv({ cls: "convert-to-webp-preview" });
     this.previewImage = preview.createEl("img", { attr: { alt: "WebP conversion preview" } });
     this.previewInfo = preview.createDiv({ cls: "convert-to-webp-preview-info", text: "Preparing preview…" });
@@ -55,12 +73,12 @@ export class ConvertModal extends Modal {
       .setValue(this.options.resizeMode)
       .onChange((value) => {
         this.options.resizeMode = value as ResizeMode;
-        if (this.sizeInput) this.sizeInput.disabled = value === "none";
+        this.sizeInput?.setDisabled(value === "none");
         void this.refreshPreview();
       }));
 
     new Setting(this.contentEl).setName("Size").setDesc("Pixels; images are never enlarged").addText((text) => {
-      this.sizeInput = text.inputEl;
+      this.sizeInput = text;
       text.setValue(String(this.options.size)).setDisabled(this.options.resizeMode === "none").onChange((value) => {
         this.options.size = Number(value);
         void this.refreshPreview();
@@ -90,17 +108,27 @@ export class ConvertModal extends Modal {
     const buttons = new Setting(this.contentEl);
     buttons.addButton((button) => button.setButtonText("Cancel").onClick(() => this.close()));
     buttons.addButton((button) => {
-      this.convertButton = button.buttonEl;
+      this.convertButton = button;
       button.setButtonText("Convert").setCta().setDisabled(true).onClick(() => void this.submit());
+      button.buttonEl.addEventListener("pointerdown", () => {
+        debugLog("Convert button pointerdown observed", {
+          disabled: button.buttonEl.disabled,
+          hasPreviewBlob: Boolean(this.previewBlob)
+        });
+      });
     });
   }
 
   private async loadImage(): Promise<void> {
+    debugLog("Loading source image", { path: this.file.path });
     try {
       const data = await this.app.vault.readBinary(this.file);
+      debugLog("Source image read", { path: this.file.path, byteLength: data.byteLength });
       this.original = await decodeImage(data, MIME_TYPES[this.file.extension.toLowerCase()] ?? "application/octet-stream");
+      debugLog("Source image decoded", { width: this.original.width, height: this.original.height });
       await this.refreshPreview();
     } catch (error) {
+      debugError("Loading source image failed", error);
       this.showError(error);
     }
   }
@@ -108,7 +136,8 @@ export class ConvertModal extends Modal {
   private async refreshPreview(): Promise<void> {
     if (!this.original || !this.previewInfo) return;
     const generation = ++this.generation;
-    this.convertButton?.setAttribute("disabled", "true");
+    debugLog("Preview encoding started", { generation, options: this.options });
+    this.convertButton?.setDisabled(true);
     this.previewInfo.setText("Encoding preview…");
     try {
       this.dimensions = calculateDimensions(
@@ -117,27 +146,54 @@ export class ConvertModal extends Modal {
         this.options.size
       );
       const blob = await encodeWebp(this.original, this.dimensions, this.options);
-      if (generation !== this.generation) return;
+      if (generation !== this.generation) {
+        debugLog("Discarding stale preview", { generation, currentGeneration: this.generation });
+        return;
+      }
       this.previewBlob = blob;
       if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
       this.previewUrl = URL.createObjectURL(blob);
       if (this.previewImage) this.previewImage.src = this.previewUrl;
       this.previewInfo.setText(`${this.dimensions.width} × ${this.dimensions.height}px · ${formatBytes(blob.size)}`);
-      this.convertButton?.removeAttribute("disabled");
+      this.convertButton?.setDisabled(false);
+      debugLog("Preview ready; Convert button enabled", {
+        generation,
+        width: this.dimensions.width,
+        height: this.dimensions.height,
+        blobSize: blob.size
+      });
     } catch (error) {
-      if (generation === this.generation) this.showError(error);
+      if (generation === this.generation) {
+        debugError("Preview encoding failed", error);
+        this.showError(error);
+      }
     }
   }
 
   private async submit(): Promise<void> {
-    if (!this.previewBlob) return;
-    this.convertButton?.setAttribute("disabled", "true");
+    debugLog("Convert button handler entered", {
+      hasPreviewBlob: Boolean(this.previewBlob),
+      submitting: this.submitting,
+      blobSize: this.previewBlob?.size
+    });
+    if (!this.previewBlob || this.submitting) {
+      debugLog("Convert request ignored", { hasPreviewBlob: Boolean(this.previewBlob), submitting: this.submitting });
+      return;
+    }
+    this.submitting = true;
+    this.convertButton?.setDisabled(true);
+    this.previewInfo?.setText("Converting…");
     try {
+      debugLog("Calling plugin conversion callback");
       await this.onConvert(this.previewBlob, { ...this.options });
+      debugLog("Conversion callback resolved; closing modal");
       this.close();
     } catch (error) {
+      debugError("Conversion callback failed", error);
       this.showError(error);
-      this.convertButton?.removeAttribute("disabled");
+      this.convertButton?.setDisabled(false);
+    } finally {
+      this.submitting = false;
     }
   }
 
@@ -148,6 +204,7 @@ export class ConvertModal extends Modal {
   }
 
   override onClose(): void {
+    debugLog("Modal closed", { path: this.file.path });
     this.original?.close();
     if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
     this.contentEl.empty();
