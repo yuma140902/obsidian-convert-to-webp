@@ -1,20 +1,28 @@
-import { App, ButtonComponent, Modal, Notice, Setting, TFile, TextComponent } from "obsidian";
+import {
+  type App,
+  type ButtonComponent,
+  Modal,
+  Notice,
+  Setting,
+  type TextComponent,
+  type TFile,
+} from "obsidian";
 import { debugError, debugLog } from "./debug";
 import {
+  type ConvertOptions,
   calculateDimensions,
+  type Dimensions,
   decodeImage,
   encodeWebp,
   formatPreviewInfo,
-  type ConvertOptions,
-  type Dimensions,
-  type ResizeMode
+  type ResizeMode,
 } from "./image";
 
 const MIME_TYPES: Record<string, string> = {
   png: "image/png",
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
-  webp: "image/webp"
+  webp: "image/webp",
 };
 
 export class ConvertModal extends Modal {
@@ -37,14 +45,20 @@ export class ConvertModal extends Modal {
     initialOptions: ConvertOptions,
     private readonly currentNote: TFile | null,
     private readonly otherReferringNotes: TFile[],
-    private readonly onConvert: (blob: Blob, options: ConvertOptions) => Promise<void>
+    private readonly onConvert: (
+      blob: Blob,
+      options: ConvertOptions,
+    ) => Promise<void>,
   ) {
     super(app);
     this.options = { ...initialOptions };
   }
 
   override onOpen(): void {
-    debugLog("Modal opened", { path: this.file.path, initialOptions: this.options });
+    debugLog("Modal opened", {
+      path: this.file.path,
+      initialOptions: this.options,
+    });
     this.modalEl.addClass("convert-to-webp-modal");
     this.titleEl.setText(`Convert ${this.file.name} to WebP`);
     this.render();
@@ -53,68 +67,105 @@ export class ConvertModal extends Modal {
 
   private render(): void {
     if (this.otherReferringNotes.length > 0) {
-      const names = this.otherReferringNotes.slice(0, 3).map((note) => note.path).join(", ");
+      const names = this.otherReferringNotes
+        .slice(0, 3)
+        .map((note) => note.path)
+        .join(", ");
       const remaining = this.otherReferringNotes.length - 3;
       this.contentEl.createDiv({
         cls: "convert-to-webp-warning",
-        text: `Warning: ${this.otherReferringNotes.length} other note(s) reference this image. Their links will not be changed: ${names}${remaining > 0 ? `, and ${remaining} more` : ""}`
+        text: `Warning: ${this.otherReferringNotes.length} other note(s) reference this image. Their links will not be changed: ${names}${remaining > 0 ? `, and ${remaining} more` : ""}`,
       });
     } else if (!this.currentNote) {
       this.contentEl.createDiv({
         cls: "convert-to-webp-warning",
-        text: "Warning: No current Markdown note was found, so no image link will be changed."
+        text: "Warning: No current Markdown note was found, so no image link will be changed.",
       });
     }
-    const preview = this.contentEl.createDiv({ cls: "convert-to-webp-preview" });
-    this.previewImage = preview.createEl("img", { attr: { alt: "WebP conversion preview" } });
-    this.previewInfo = preview.createDiv({ cls: "convert-to-webp-preview-info", text: "Preparing preview…" });
-
-    new Setting(this.contentEl).setName("Resize").addDropdown((dropdown) => dropdown
-      .addOptions({ none: "Keep original size", "long-edge": "Long edge", "short-edge": "Short edge", width: "Width", height: "Height" })
-      .setValue(this.options.resizeMode)
-      .onChange((value) => {
-        this.options.resizeMode = value as ResizeMode;
-        this.sizeInput?.setDisabled(value === "none");
-        void this.refreshPreview();
-      }));
-
-    new Setting(this.contentEl).setName("Size").setDesc("Pixels; images are never enlarged").addText((text) => {
-      this.sizeInput = text;
-      text.setValue(String(this.options.size)).setDisabled(this.options.resizeMode === "none").onChange((value) => {
-        this.options.size = Number(value);
-        void this.refreshPreview();
-      });
-      text.inputEl.type = "number";
-      text.inputEl.min = "1";
-      text.inputEl.step = "1";
+    const preview = this.contentEl.createDiv({
+      cls: "convert-to-webp-preview",
+    });
+    this.previewImage = preview.createEl("img", {
+      attr: { alt: "WebP conversion preview" },
+    });
+    this.previewInfo = preview.createDiv({
+      cls: "convert-to-webp-preview-info",
+      text: "Preparing preview…",
     });
 
-    new Setting(this.contentEl).setName("Encoding").addDropdown((dropdown) => dropdown
-      .addOptions({ lossy: "Lossy", lossless: "Lossless" })
-      .setValue(this.options.lossless ? "lossless" : "lossy")
-      .onChange((value) => {
-        this.options.lossless = value === "lossless";
-        void this.refreshPreview();
-      }));
+    new Setting(this.contentEl).setName("Resize").addDropdown((dropdown) =>
+      dropdown
+        .addOptions({
+          none: "Keep original size",
+          "long-edge": "Long edge",
+          "short-edge": "Short edge",
+          width: "Width",
+          height: "Height",
+        })
+        .setValue(this.options.resizeMode)
+        .onChange((value) => {
+          this.options.resizeMode = value as ResizeMode;
+          this.sizeInput?.setDisabled(value === "none");
+          void this.refreshPreview();
+        }),
+    );
 
-    new Setting(this.contentEl).setName("Quality").setDesc("Used in both lossy and lossless modes").addSlider((slider) => slider
-      .setLimits(0, 100, 1)
-      .setDynamicTooltip()
-      .setValue(this.options.quality)
-      .onChange((value) => {
-        this.options.quality = value;
-        void this.refreshPreview();
-      }));
+    new Setting(this.contentEl)
+      .setName("Size")
+      .setDesc("Pixels; images are never enlarged")
+      .addText((text) => {
+        this.sizeInput = text;
+        text
+          .setValue(String(this.options.size))
+          .setDisabled(this.options.resizeMode === "none")
+          .onChange((value) => {
+            this.options.size = Number(value);
+            void this.refreshPreview();
+          });
+        text.inputEl.type = "number";
+        text.inputEl.min = "1";
+        text.inputEl.step = "1";
+      });
+
+    new Setting(this.contentEl).setName("Encoding").addDropdown((dropdown) =>
+      dropdown
+        .addOptions({ lossy: "Lossy", lossless: "Lossless" })
+        .setValue(this.options.lossless ? "lossless" : "lossy")
+        .onChange((value) => {
+          this.options.lossless = value === "lossless";
+          void this.refreshPreview();
+        }),
+    );
+
+    new Setting(this.contentEl)
+      .setName("Quality")
+      .setDesc("Used in both lossy and lossless modes")
+      .addSlider((slider) =>
+        slider
+          .setLimits(0, 100, 1)
+          .setDynamicTooltip()
+          .setValue(this.options.quality)
+          .onChange((value) => {
+            this.options.quality = value;
+            void this.refreshPreview();
+          }),
+      );
 
     const buttons = new Setting(this.contentEl);
-    buttons.addButton((button) => button.setButtonText("Cancel").onClick(() => this.close()));
+    buttons.addButton((button) =>
+      button.setButtonText("Cancel").onClick(() => this.close()),
+    );
     buttons.addButton((button) => {
       this.convertButton = button;
-      button.setButtonText("Convert").setCta().setDisabled(true).onClick(() => void this.submit());
+      button
+        .setButtonText("Convert")
+        .setCta()
+        .setDisabled(true)
+        .onClick(() => void this.submit());
       button.buttonEl.addEventListener("pointerdown", () => {
         debugLog("Convert button pointerdown observed", {
           disabled: button.buttonEl.disabled,
-          hasPreviewBlob: Boolean(this.previewBlob)
+          hasPreviewBlob: Boolean(this.previewBlob),
         });
       });
     });
@@ -125,9 +176,19 @@ export class ConvertModal extends Modal {
     try {
       const data = await this.app.vault.readBinary(this.file);
       this.originalBytes = data.byteLength;
-      debugLog("Source image read", { path: this.file.path, byteLength: data.byteLength });
-      this.original = await decodeImage(data, MIME_TYPES[this.file.extension.toLowerCase()] ?? "application/octet-stream");
-      debugLog("Source image decoded", { width: this.original.width, height: this.original.height });
+      debugLog("Source image read", {
+        path: this.file.path,
+        byteLength: data.byteLength,
+      });
+      this.original = await decodeImage(
+        data,
+        MIME_TYPES[this.file.extension.toLowerCase()] ??
+          "application/octet-stream",
+      );
+      debugLog("Source image decoded", {
+        width: this.original.width,
+        height: this.original.height,
+      });
       await this.refreshPreview();
     } catch (error) {
       debugError("Loading source image failed", error);
@@ -136,7 +197,8 @@ export class ConvertModal extends Modal {
   }
 
   private async refreshPreview(): Promise<void> {
-    if (!this.original || this.originalBytes === undefined || !this.previewInfo) return;
+    if (!this.original || this.originalBytes === undefined || !this.previewInfo)
+      return;
     const generation = ++this.generation;
     debugLog("Preview encoding started", { generation, options: this.options });
     this.convertButton?.setDisabled(true);
@@ -145,29 +207,38 @@ export class ConvertModal extends Modal {
       this.dimensions = calculateDimensions(
         { width: this.original.width, height: this.original.height },
         this.options.resizeMode,
-        this.options.size
+        this.options.size,
       );
-      const blob = await encodeWebp(this.original, this.dimensions, this.options);
+      const blob = await encodeWebp(
+        this.original,
+        this.dimensions,
+        this.options,
+      );
       if (generation !== this.generation) {
-        debugLog("Discarding stale preview", { generation, currentGeneration: this.generation });
+        debugLog("Discarding stale preview", {
+          generation,
+          currentGeneration: this.generation,
+        });
         return;
       }
       this.previewBlob = blob;
       if (this.previewUrl) URL.revokeObjectURL(this.previewUrl);
       this.previewUrl = URL.createObjectURL(blob);
       if (this.previewImage) this.previewImage.src = this.previewUrl;
-      this.previewInfo.setText(formatPreviewInfo(
-        { width: this.original.width, height: this.original.height },
-        this.originalBytes,
-        this.dimensions,
-        blob.size
-      ));
+      this.previewInfo.setText(
+        formatPreviewInfo(
+          { width: this.original.width, height: this.original.height },
+          this.originalBytes,
+          this.dimensions,
+          blob.size,
+        ),
+      );
       this.convertButton?.setDisabled(false);
       debugLog("Preview ready; Convert button enabled", {
         generation,
         width: this.dimensions.width,
         height: this.dimensions.height,
-        blobSize: blob.size
+        blobSize: blob.size,
       });
     } catch (error) {
       if (generation === this.generation) {
@@ -181,10 +252,13 @@ export class ConvertModal extends Modal {
     debugLog("Convert button handler entered", {
       hasPreviewBlob: Boolean(this.previewBlob),
       submitting: this.submitting,
-      blobSize: this.previewBlob?.size
+      blobSize: this.previewBlob?.size,
     });
     if (!this.previewBlob || this.submitting) {
-      debugLog("Convert request ignored", { hasPreviewBlob: Boolean(this.previewBlob), submitting: this.submitting });
+      debugLog("Convert request ignored", {
+        hasPreviewBlob: Boolean(this.previewBlob),
+        submitting: this.submitting,
+      });
       return;
     }
     this.submitting = true;
