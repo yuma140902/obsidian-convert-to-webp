@@ -2,9 +2,9 @@ import type { ConvertOptions, ResizeMode } from "./image";
 
 export const DEFAULT_CONVERT_OPTIONS: ConvertOptions = {
   resizeMode: "none",
-  size: 1200,
+  size: 1000,
   lossless: false,
-  quality: 80,
+  quality: 75,
 };
 
 const RESIZE_MODES = new Set<ResizeMode>([
