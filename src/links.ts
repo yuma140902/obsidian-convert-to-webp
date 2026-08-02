@@ -33,7 +33,7 @@ export function rewriteImageLinks(
     wiki,
     (whole, path: string, subpath = "", alias = "") => {
       if (!resolvesTo(metadataCache, path, notePath, source)) return whole;
-      return `![[${path.replace(/\.(?:bmp|png|jpe?g|webp)$/i, ".webp")}${subpath}${alias}]]`;
+      return `![[${path.replace(/\.(?:avif|bmp|png|jpe?g|webp)$/i, ".webp")}${subpath}${alias}]]`;
     },
   );
 
@@ -48,7 +48,7 @@ export function rewriteImageLinks(
       suffix = "",
     ) => {
       if (!resolvesTo(metadataCache, path, notePath, source)) return whole;
-      return `![${alt}](${opening}${path.replace(/\.(?:bmp|png|jpe?g|webp)$/i, ".webp")}${closing}${suffix})`;
+      return `![${alt}](${opening}${path.replace(/\.(?:avif|bmp|png|jpe?g|webp)$/i, ".webp")}${closing}${suffix})`;
     },
   );
 }

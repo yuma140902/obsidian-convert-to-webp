@@ -37,6 +37,7 @@ it("replaces supported extensions", () => {
   expect(replaceImageExtension("Assets/photo.JPEG")).toBe("Assets/photo.webp");
   expect(replaceImageExtension("x.png")).toBe("x.webp");
   expect(replaceImageExtension("scan.BMP")).toBe("scan.webp");
+  expect(replaceImageExtension("photo.AVIF")).toBe("photo.webp");
 });
 
 it("preserves the path of existing WebP files", () => {

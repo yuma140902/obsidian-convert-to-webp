@@ -46,3 +46,20 @@ it("rewrites embedded BMP links", () => {
     ),
   ).toBe("![[assets/scan.webp]]\n![scan](assets/scan.webp)");
 });
+
+it("rewrites embedded AVIF links", () => {
+  const avifSource = { path: "assets/photo.avif" } as TFile;
+  const avifMetadataCache = {
+    getFirstLinkpathDest: (link: string) =>
+      ["assets/photo.avif", "photo.avif"].includes(link) ? avifSource : null,
+  } as unknown as MetadataCache;
+
+  expect(
+    rewriteImageLinks(
+      "![[assets/photo.avif]]\n![photo](assets/photo.avif)",
+      "note.md",
+      avifSource,
+      avifMetadataCache,
+    ),
+  ).toBe("![[assets/photo.webp]]\n![photo](assets/photo.webp)");
+});
