@@ -79,7 +79,7 @@ export function calculateDimensions(
 
 export function replaceImageExtension(path: string): string {
   if (/\.webp$/i.test(path)) return path;
-  return path.replace(/\.(?:png|jpe?g)$/i, ".webp");
+  return path.replace(/\.(?:bmp|png|jpe?g)$/i, ".webp");
 }
 
 export function formatBytes(bytes: number): string {
