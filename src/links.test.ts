@@ -29,3 +29,20 @@ describe("rewriteImageLinks", () => {
     );
   });
 });
+
+it("rewrites embedded BMP links", () => {
+  const bmpSource = { path: "assets/scan.bmp" } as TFile;
+  const bmpMetadataCache = {
+    getFirstLinkpathDest: (link: string) =>
+      ["assets/scan.bmp", "scan.bmp"].includes(link) ? bmpSource : null,
+  } as unknown as MetadataCache;
+
+  expect(
+    rewriteImageLinks(
+      "![[assets/scan.bmp]]\n![scan](assets/scan.bmp)",
+      "note.md",
+      bmpSource,
+      bmpMetadataCache,
+    ),
+  ).toBe("![[assets/scan.webp]]\n![scan](assets/scan.webp)");
+});

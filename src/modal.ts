@@ -19,6 +19,7 @@ import {
 } from "./image";
 
 const MIME_TYPES: Record<string, string> = {
+  bmp: "image/bmp",
   png: "image/png",
   jpg: "image/jpeg",
   jpeg: "image/jpeg",

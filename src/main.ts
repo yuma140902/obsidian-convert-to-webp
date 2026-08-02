@@ -12,7 +12,7 @@ import { rewriteImageLinks } from "./links";
 import { ConvertModal } from "./modal";
 import { DEFAULT_CONVERT_OPTIONS, loadConvertOptions } from "./settings";
 
-const SUPPORTED_EXTENSIONS = new Set(["png", "jpg", "jpeg", "webp"]);
+const SUPPORTED_EXTENSIONS = new Set(["bmp", "png", "jpg", "jpeg", "webp"]);
 
 export default class ConvertToWebpPlugin extends Plugin {
   private options: ConvertOptions = { ...DEFAULT_CONVERT_OPTIONS };
