@@ -1,6 +1,6 @@
 # Obsidian Plugin: Convert to WebP
 
-An Obsidian plugin that converts BMP, PNG, JPEG, and WebP images in your vault to WebP.
+An Obsidian plugin that converts AVIF, BMP, PNG, JPEG, and WebP images in your vault to WebP.
 
 ## Usage
 
@@ -9,7 +9,7 @@ An Obsidian plugin that converts BMP, PNG, JPEG, and WebP images in your vault t
 3. Select a resize mode, target size, encoding mode, and quality while checking the preview and estimated file size.
 4. Choose **Convert**.
 
-For BMP, PNG, and JPEG sources, the plugin changes the extension to `.webp`, updates the link in the current note, and replaces the image data. Existing WebP files are overwritten in place. Conversion is cancelled if the target path already exists. If Obsidian's metadata cache reports that other notes also reference the image, the conversion dialog warns you; those other notes are intentionally left unchanged.
+For AVIF, BMP, PNG, and JPEG sources, the plugin changes the extension to `.webp`, updates the link in the current note, and replaces the image data. Existing WebP files are overwritten in place. Conversion is cancelled if the target path already exists. If Obsidian's metadata cache reports that other notes also reference the image, the conversion dialog warns you; those other notes are intentionally left unchanged.
 
 ## Build from source
 
