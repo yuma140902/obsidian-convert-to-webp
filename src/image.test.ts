@@ -38,6 +38,11 @@ it("replaces supported extensions", () => {
   expect(replaceImageExtension("x.png")).toBe("x.webp");
 });
 
+it("preserves the path of existing WebP files", () => {
+  expect(replaceImageExtension("Assets/photo.WEBP")).toBe("Assets/photo.WEBP");
+  expect(replaceImageExtension("Assets/photo.webp")).toBe("Assets/photo.webp");
+});
+
 it("formats byte sizes", () => {
   expect(formatBytes(512)).toBe("512 B");
   expect(formatBytes(1536)).toBe("1.5 KB");
