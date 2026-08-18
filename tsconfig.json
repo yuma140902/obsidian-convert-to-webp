@@ -1,7 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] },
     "types": ["node"],
     "inlineSourceMap": true,
     "inlineSources": true,
@@ -16,7 +14,6 @@
     "isolatedModules": true,
     "moduleResolution": "Bundler",
     "importHelpers": true,
-    "downlevelIteration": true,
     "useUnknownInCatchVariables": true,
     "lib": ["DOM", "ES2022"]
   },
