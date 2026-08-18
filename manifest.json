@@ -1,7 +1,7 @@
 {
   "id": "convert-to-webp",
   "name": "Convert to WebP",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "minAppVersion": "1.5.0",
   "description": "Convert PNG, JPEG, and WebP images to WebP with resize and quality controls.",
   "author": "yuma140902",
