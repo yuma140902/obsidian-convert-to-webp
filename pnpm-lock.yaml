@@ -13,7 +13,7 @@ importers:
         version: 1.5.0
       wasm-feature-detect:
         specifier: ^1.8.0
-        version: 1.8.0
+        version: 1.9.0
     devDependencies:
       '@biomejs/biome':
         specifier: 2.5.7
@@ -703,8 +703,8 @@ packages:
   w3c-keyname@2.2.8:
     resolution: {integrity: sha512-dpojBhNsCNN7T82Tm7k26A6G9ML3NkhDsnw9n/eoxSRlVBB4CEtIQ/KTCLI2Fwf3ataSXRhYFkQi3SlnFwPvPQ==}
 
-  wasm-feature-detect@1.8.0:
-    resolution: {integrity: sha512-zksaLKM2fVlnB5jQQDqKXXwYHLQUVH9es+5TOOHwGOVJOCeRBCiPjwSg+3tN2AdTCzjgli4jijCH290kXb/zWQ==}
+  wasm-feature-detect@1.9.0:
+    resolution: {integrity: sha512-zonE+xlIIYtxPy++L24ow0hAD8CICb4+FgPyROd3buyXIqsJvUEDkBgfCCoXOd1Hu3DUr0GOfnPIdcGV+YpNaA==}
 
   why-is-node-running@2.3.0:
     resolution: {integrity: sha512-hUrmaWBdVDcxvYqnyh09zunKzROWjbZTiNy8dBEjkS7ehEDQibXJ7XvlmtbwuTclUiIyN+CyXQD4Vmko8fNm8w==}
@@ -841,7 +841,7 @@ snapshots:
 
   '@jsquash/webp@1.5.0':
     dependencies:
-      wasm-feature-detect: 1.8.0
+      wasm-feature-detect: 1.9.0
 
   '@marijn/find-cluster-break@1.0.3': {}
 
@@ -1175,7 +1175,7 @@ snapshots:
 
   w3c-keyname@2.2.8: {}
 
-  wasm-feature-detect@1.8.0: {}
+  wasm-feature-detect@1.9.0: {}
 
   why-is-node-running@2.3.0:
     dependencies:
