@@ -3,7 +3,7 @@
   "version": "0.2.4",
   "description": "Convert images in an Obsidian vault to WebP.",
   "main": "main.js",
-  "packageManager": "pnpm@12.3.3",
+  "packageManager": "pnpm@12.3.4",
   "scripts": {
     "build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
     "check": "biome check .",
