@@ -1,6 +1,6 @@
 {
   "name": "obsidian-convert-to-webp",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Convert images in an Obsidian vault to WebP.",
   "main": "main.js",
   "packageManager": "pnpm@12.15.0",
